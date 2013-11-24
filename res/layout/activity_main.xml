@@ -22,12 +22,23 @@
         <requestFocus />
     </EditText>
 
+    <EditText
+        android:id="@+id/ed.outputData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/ed.inputData"
+        android:layout_below="@+id/bt.analyze"
+        android:layout_marginTop="36dp"
+        android:ems="10"
+        android:inputType="textMultiLine" />
+
     <Button
         android:id="@+id/bt.analyze"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/ed.inputData"
         android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
+        android:layout_marginTop="74dp"
         android:text="@string/analyze" />
 
 </RelativeLayout>

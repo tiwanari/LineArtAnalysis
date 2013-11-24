@@ -13,7 +13,7 @@ import jp.narit.lineartanalysis.graph.LabelDictionary.Label;
 public class Edge {
 	Vertex from;
 	Vertex to;
-	ArrayList<Label> labelCandidates = new ArrayList<Label>(4);
+	private ArrayList<Label> mLabelCandidates = new ArrayList<Label>(4);
 	
 	public Edge(Vertex from, Vertex to) {
 		this.from = from;
@@ -21,12 +21,20 @@ public class Edge {
 	}
 	
 	/**
+	 * Edgeの種類の候補を返す
+	 * @return
+	 */
+	ArrayList<Label> getCandidates() {
+		return mLabelCandidates;
+	}
+	
+	/**
 	 * 候補を追加する
 	 * @param candidate
 	 */
 	void addCandidate(Label candidate) {
-		if (!labelCandidates.contains(candidate))
-			labelCandidates.add(candidate);
+		if (!mLabelCandidates.contains(candidate))
+			mLabelCandidates.add(candidate);
 	}
 	
 	/**
@@ -34,7 +42,7 @@ public class Edge {
 	 * @param candidate
 	 */
 	void removeCandidate(LabelDictionary candidate) {
-		labelCandidates.remove(candidate);
+		mLabelCandidates.remove(candidate);
 	}
 	
 	/**
@@ -45,12 +53,12 @@ public class Edge {
 	boolean andCandidates(List<Label> list) {
 		ArrayList<Label> newCandidates = new ArrayList<Label>();
 		for (Label type: list) {
-			if (labelCandidates.contains(type)) {
+			if (mLabelCandidates.contains(type)) {
 				newCandidates.add(type);
 			}
 		}
-		boolean notUpdated = labelCandidates.containsAll(newCandidates);
-		labelCandidates = newCandidates;	// 更新
+		boolean notUpdated = mLabelCandidates.containsAll(newCandidates);
+		mLabelCandidates = newCandidates;	// 更新
 		
 		return !notUpdated;
 	}
