@@ -10,7 +10,7 @@ import java.util.List;
  * @author tatsuya
  * 
  */
-public interface LabelDictionary {
+public class LabelDictionary {
 	
 	public static final int L = 0;
 	public static final int A = 1;
@@ -18,7 +18,39 @@ public interface LabelDictionary {
 	public static final int T = 3;
 	
 	public static enum Label {
-		PLUS, MINUS, OUTWARD, INWARD,
+		PLUS("PLUS"), MINUS("MINUS"), OUTWARD("OUTWARD"), INWARD("INWARD");
+		
+		private String name;
+		
+		private Label(String name) {
+			this.name = name;
+		}
+		
+		@Override
+		public String toString() {
+			return name;
+		}
+	};
+
+	public static int getLabelValue(String label) {
+		if (label.equals("L")) return L;
+		else if (label.equals("A")) return A;
+		else if (label.equals("Y")) return Y;
+		else return T;
+	}
+	
+	public static String getLabelString(int label) {
+		switch (label) {
+			case L:
+				return "L";
+			case A:
+				return "A";
+			case Y:
+				return "Y";
+			case T:
+				return "T";
+		}
+		return "ERROR";
 	}
 	
 	public static final List<Label> L1 = Arrays.asList(Label.OUTWARD, Label.INWARD);
@@ -42,7 +74,7 @@ public interface LabelDictionary {
 	public static final List<Label> T2 = Arrays.asList(Label.OUTWARD, Label.INWARD, Label.INWARD);
 	public static final List<Label> T3 = Arrays.asList(Label.OUTWARD, Label.PLUS, Label.INWARD);
 	public static final List<Label> T4 = Arrays.asList(Label.OUTWARD, Label.MINUS, Label.INWARD);
-
+	
 	@SuppressWarnings("serial")
 	public static final ArrayList<List<Label>> LTYPES = new ArrayList<List<Label>>() {
 		{
@@ -63,7 +95,7 @@ public interface LabelDictionary {
 		}
 	};
 	@SuppressWarnings("serial")
-	public static final ArrayList<List<Label>> YTYPES = new ArrayList<List<Label>>(){
+	public static final ArrayList<List<Label>> YTYPES = new ArrayList<List<Label>>() {
 		{
 			add(LabelDictionary.Y1);
 			add(LabelDictionary.Y2);
@@ -72,7 +104,7 @@ public interface LabelDictionary {
 		}
 	};;
 	@SuppressWarnings("serial")
-	public static final ArrayList<List<Label>> TTYPES = new ArrayList<List<Label>>(){
+	public static final ArrayList<List<Label>> TTYPES = new ArrayList<List<Label>>() {
 		{
 			add(LabelDictionary.T1);
 			add(LabelDictionary.T2);

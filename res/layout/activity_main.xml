@@ -21,7 +21,7 @@
 
         <requestFocus />
     </EditText>
-
+    
     <EditText
         android:id="@+id/ed.outputData"
         android:layout_width="wrap_content"
@@ -40,5 +40,50 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="74dp"
         android:text="@string/analyze" />
+
+    <EditText
+        android:id="@+id/ed.inputBorderData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/ed.inputData"
+        android:layout_alignBottom="@+id/ed.inputData"
+        android:layout_marginLeft="49dp"
+        android:layout_toRightOf="@+id/ed.inputData"
+        android:ems="10"
+        android:inputType="textMultiLine" />
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/ed.inputData"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="17dp"
+        android:text="ラベル情報" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/textView1"
+        android:layout_alignLeft="@+id/ed.inputBorderData"
+        android:text="境界" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/ed.outputData"
+        android:layout_alignRight="@+id/textView1"
+        android:text="結果" />
+
+    <ImageView
+        android:id="@+id/imageView01"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/ed.outputData"
+        android:layout_alignRight="@+id/ed.inputBorderData"
+        android:layout_marginRight="63dp"
+        android:src="@drawable/ic_launcher" />
 
 </RelativeLayout>

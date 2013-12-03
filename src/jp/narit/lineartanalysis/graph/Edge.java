@@ -3,6 +3,8 @@ package jp.narit.lineartanalysis.graph;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.util.Log;
+
 import jp.narit.lineartanalysis.graph.LabelDictionary.Label;
 
 /**
@@ -11,38 +13,71 @@ import jp.narit.lineartanalysis.graph.LabelDictionary.Label;
  *
  */
 public class Edge {
-	Vertex from;
-	Vertex to;
+	private static final String TAG = "Edge";
+	private String mFrom;
+	private String mTo;
 	private ArrayList<Label> mLabelCandidates = new ArrayList<Label>(4);
 	
-	public Edge(Vertex from, Vertex to) {
-		this.from = from;
-		this.to = to;
+	public Edge(String from, String to) {
+		this.mFrom = from;
+		this.mTo = to;
+		initCandidates();
 	}
 	
-	/**
-	 * Edgeの種類の候補を返す
-	 * @return
-	 */
-	ArrayList<Label> getCandidates() {
-		return mLabelCandidates;
+	public String getFrom() {
+		return mFrom;
 	}
 	
+	public String getTo() {
+		return mTo;
+	}
+
+	
 	/**
-	 * 候補を追加する
+	 * 候補を初期化する
 	 * @param candidate
 	 */
-	void addCandidate(Label candidate) {
-		if (!mLabelCandidates.contains(candidate))
-			mLabelCandidates.add(candidate);
+	private void initCandidates() {
+		mLabelCandidates.add(Label.INWARD);
+		mLabelCandidates.add(Label.OUTWARD);
+		mLabelCandidates.add(Label.PLUS);
+		mLabelCandidates.add(Label.MINUS);
 	}
-	
+
 	/**
 	 * 候補を消す
 	 * @param candidate
 	 */
-	void removeCandidate(LabelDictionary candidate) {
+	public void removeCandidate(Label candidate) {
 		mLabelCandidates.remove(candidate);
+	}
+
+	/**
+	 * 複数の候補を消す
+	 * @param candidates
+	 */
+	public void removeCandidates(List<Label> candidates) {
+		mLabelCandidates.removeAll(candidates);
+	}
+	
+	/**
+	 * 反転すべきときに，LabelがINWARD，OUTWARDであれば入れ替える
+	 * @param label ラベル
+	 * @param flag 反転すべきか
+	 * @return
+	 */
+	private Label changeDirection(Label label, boolean flag) {
+		// 反転すべきでないときは，そのままかえす
+		if (!flag)
+			return label;
+		
+		// 反転すべきときは，INWARDとOUTWARDのときだけ反転
+		if (label == Label.INWARD)
+			return Label.OUTWARD;
+		else if (label == Label.OUTWARD)
+			return Label.INWARD;
+		
+		return label;
 	}
 	
 	/**
@@ -50,16 +85,58 @@ public class Edge {
 	 * @param list
 	 * @return boolean 更新されたかどうか
 	 */
-	boolean andCandidates(List<Label> list) {
+	public boolean andCandidates(List<Label> list, String from) {
 		ArrayList<Label> newCandidates = new ArrayList<Label>();
+		
+		// 開始点が違うか判定
+		boolean flag = !from.equals(this.mFrom);
+		Log.d(TAG, "(" + showLine() + ") update label candidates: " + mLabelCandidates.toString());
+		Log.d(TAG, "arg list: " + list.toString());
+		
+		// 開始点が逆の線分で共通部分を調べる際には，INWARDとOUTWARDが逆転する
 		for (Label type: list) {
-			if (mLabelCandidates.contains(type)) {
-				newCandidates.add(type);
+			// 反転を考慮した論理積を取る
+			if (mLabelCandidates.contains(changeDirection(type, flag))) {
+				newCandidates.add(changeDirection(type, flag));
 			}
 		}
+		// 更新されたかどうか
 		boolean notUpdated = mLabelCandidates.containsAll(newCandidates);
+		
 		mLabelCandidates = newCandidates;	// 更新
 		
+		Log.d(TAG, "(" + showLine() + ") updated label candidates: " + mLabelCandidates.toString());
 		return !notUpdated;
+	}
+	
+	/**
+	 * この辺のラベル候補を返す
+	 * 
+	 * @param from 開始点の名前
+	 * @return
+	 */
+	public List<Label> getCandidatesConsideredDirection(String from) {
+		ArrayList<Label> newCandidates = new ArrayList<Label>();
+		// 開始点が違うか判定
+		boolean flag = !from.equals(this.mFrom);
+		
+		// 開始点が逆の線分で共通部分を調べる際には，INWARDとOUTWARDが逆転する
+		for (Label label : mLabelCandidates) {
+			newCandidates.add(changeDirection(label, flag));
+		}
+		return newCandidates;
+	}
+
+	public String showLine() {
+		return mFrom + "-" + mTo;
+	}
+	
+	public String showCandidates() {
+		StringBuffer candidates = new StringBuffer();
+		for (Label label : mLabelCandidates) {
+			candidates.append(label.toString() + ", ");
+		}
+		candidates.append("\n");
+		return candidates.toString();
 	}
 }
