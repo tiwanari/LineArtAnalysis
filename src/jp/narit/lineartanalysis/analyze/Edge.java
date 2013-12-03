@@ -1,11 +1,11 @@
-package jp.narit.lineartanalysis.graph;
+package jp.narit.lineartanalysis.analyze;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import android.util.Log;
 
-import jp.narit.lineartanalysis.graph.LabelDictionary.Label;
+import jp.narit.lineartanalysis.analyze.LabelDictionary.Label;
 
 /**
  * 頂点
@@ -138,5 +138,13 @@ public class Edge {
 		}
 		candidates.append("\n");
 		return candidates.toString();
+	}
+
+	/**
+	 * 候補の数を返す
+	 * @return
+	 */
+	public int getCandidatesCount() {
+		return mLabelCandidates.size();
 	}
 }

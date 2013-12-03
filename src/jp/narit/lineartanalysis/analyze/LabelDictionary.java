@@ -1,4 +1,4 @@
-package jp.narit.lineartanalysis.graph;
+package jp.narit.lineartanalysis.analyze;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,7 +18,7 @@ public class LabelDictionary {
 	public static final int T = 3;
 	
 	public static enum Label {
-		PLUS("PLUS"), MINUS("MINUS"), OUTWARD("OUTWARD"), INWARD("INWARD");
+		PLUS("+"), MINUS("-"), OUTWARD("->"), INWARD("<-");
 		
 		private String name;
 		

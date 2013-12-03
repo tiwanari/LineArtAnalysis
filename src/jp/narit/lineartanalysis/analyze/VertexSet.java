@@ -1,4 +1,4 @@
-package jp.narit.lineartanalysis.graph;
+package jp.narit.lineartanalysis.analyze;
 
 import java.util.ArrayList;
 

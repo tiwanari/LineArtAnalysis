@@ -3,10 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
-    <jp.narit.lineartanalysis.decode.Tutorial3View
+    <jp.narit.lineartanalysis.CameraView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
-        android:id="@+id/tutorial3_activity_java_surface_view" />
+        android:id="@+id/camera_view" />
 
 </LinearLayout>

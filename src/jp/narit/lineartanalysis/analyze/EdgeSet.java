@@ -1,4 +1,4 @@
-package jp.narit.lineartanalysis.graph;
+package jp.narit.lineartanalysis.analyze;
 
 import java.util.ArrayList;
 
@@ -74,5 +74,18 @@ public class EdgeSet {
 		}
 		
 		return null;
+	}
+	
+	/**
+	 * 全てのエッジに対して候補がひとつとなっているか
+	 * @return
+	 */
+	public boolean didSolved() {
+		for (Edge e : mSet) {
+			if (e.getCandidatesCount() != 1) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

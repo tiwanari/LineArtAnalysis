@@ -1,11 +1,11 @@
-package jp.narit.lineartanalysis.graph;
+package jp.narit.lineartanalysis.analyze;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import android.util.Log;
 
-import jp.narit.lineartanalysis.graph.LabelDictionary.Label;
+import jp.narit.lineartanalysis.analyze.LabelDictionary.Label;
 
 /**
  * 頂点

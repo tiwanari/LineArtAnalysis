@@ -2,7 +2,6 @@ package jp.narit.lineartanalysis.decode;
 
 import java.util.ArrayList;
 
-import android.util.Log;
 
 /**
  * 辺の集合
@@ -10,7 +9,8 @@ import android.util.Log;
  *
  */
 public class Vector2DSet {
-	private static final String TAG = "Edge2DSet";
+	@SuppressWarnings("unused")
+	private static final String TAG = "Vector2DSet";
 	private ArrayList<Vector2D> mSet = new ArrayList<Vector2D>();
 	
 	public Vector2DSet() {
@@ -43,12 +43,10 @@ public class Vector2DSet {
 	 * @return
 	 */
 	public Vector2D getEdge(Vertex2D v0, Vertex2D v1) {
-		Log.d(TAG, "v0: " + v0 + ", v1:" + v1);
 		// Setを調べる
 		for (Vector2D e : mSet) {
 			Vertex2D from = e.vt0;
 			Vertex2D to = e.vt1;
-			Log.d(TAG, "from: " + from + ", to:" + to);
 			
 			if (v0.equals(from) && v1.equals(to))
 				return e;	// 同じものがあればそれを返す
@@ -67,8 +65,6 @@ public class Vector2DSet {
 		// Setを調べる
 		for (Vector2D e : mSet) {
 			Vertex2D from = e.vt0;
-			Vertex2D to = e.vt1;
-			Log.d(TAG, "from: " + from + ", to:" + to);
 			
 			// どちらかにあるか
 			if (v.equals(from))
