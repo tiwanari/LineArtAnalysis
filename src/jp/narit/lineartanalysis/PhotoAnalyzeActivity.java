@@ -3,8 +3,10 @@ package jp.narit.lineartanalysis;
 import java.io.File;
 import java.util.ArrayList;
 
+import jp.narit.lineartanalysis.FileSelectDialog.OnFileSelectDialogListener;
 import jp.narit.lineartanalysis.analyze.EdgeSet;
 import jp.narit.lineartanalysis.analyze.LineArtAnalyzer;
+import jp.narit.lineartanalysis.color.LineArtColorer;
 import jp.narit.lineartanalysis.decode.LineArtDecoder;
 import jp.narit.lineartanalysis.decode.Vector2DSet;
 
@@ -15,9 +17,6 @@ import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Environment;
@@ -30,13 +29,16 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-public class PhotoAnalyzeActivity extends Activity {
+/**
+ * 画像を解析するアクティビティ
+ * @author tatsuya
+ *
+ */
+public class PhotoAnalyzeActivity extends Activity implements OnFileSelectDialogListener {
 	
 	private static final String TAG = "PhotoAnalyzeActivity";
 	
 	private LinearLayout mLayout;
-	private Button mTakePhoto;
 	private Button mAnalyze;
 	private ImageView mOutputImage;
 	private TextView mTextView;
@@ -44,9 +46,7 @@ public class PhotoAnalyzeActivity extends Activity {
 	private EdgeSet mEdges;
 	private Vector2DSet mVectors;
 	
-	private File mFilePath;
-	
-	private int[] images = {R.drawable.box};
+	private String mFilePath;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -57,15 +57,6 @@ public class PhotoAnalyzeActivity extends Activity {
 	
 	private void findViews() {
 		mLayout = (LinearLayout) findViewById(R.id.ll_photoAnalyze);
-		mTakePhoto = (Button) findViewById(R.id.bt_takePhoto);
-		mTakePhoto.setOnClickListener(new OnClickListener() {
-			
-			@Override
-			public void onClick(View arg0) {
-				Intent intent = new Intent(PhotoAnalyzeActivity.this, TakePhotoActivity.class);
-				startActivity(intent);
-			}
-		});
 		mAnalyze = (Button) findViewById(R.id.bt_analyzePhoto);
 		mAnalyze.setOnClickListener(new OnClickListener() {
 			
@@ -97,63 +88,69 @@ public class PhotoAnalyzeActivity extends Activity {
 	};
 	
 	private void selectFile() {
-		// ファイルの一覧を検索するディレクトリパスを指定する
-		String path = Environment.getExternalStorageDirectory().getPath() + "/DCIM";
+		// ファイル選択ダイアログを表示
+		FileSelectDialog dialog = new FileSelectDialog(this);
+		dialog.setOnFileSelectDialogListener(this);
 		
-		// 選択ボックスで表示するファイル名のリストを作成
-		File dir = new File(path);
-		final File[] files = dir.listFiles();
-		final String[] str_items;
-		str_items = new String[files.length + 1];
-		for (int i = 0; i < files.length; i++) {
-			File file = files[i];
-			str_items[i] = file.getName();
-		}
-		str_items[files.length] = "キャンセル";
-		
-		// ファイルの選択ボックスを表示
-		new AlertDialog.Builder(this)
-				.setTitle("解析するファイルを選択")
-				.setItems(str_items, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int which) {
-						if (which < files.length) {
-							mFilePath = files[which];
-							analyze();
-						}
-					}
-				}
-				)
-				.show();
+		// 表示
+		dialog.show(Environment.getExternalStorageDirectory().getPath());
 	}
 	
 	private void analyze() {
 		
-		Mat res = LineArtDecoder.decodeLineArt(mFilePath.toString());
+		Mat res = LineArtDecoder.decodeLineArt(mFilePath);
 		mVectors = LineArtDecoder.getAnalizedVectorSet();
 		
-		Bitmap dst = Bitmap.createBitmap(res.width(), res.height(), Bitmap.Config.ARGB_8888);
-		Utils.matToBitmap(res, dst);
-		
-		mOutputImage.setImageBitmap(dst);
 		
 		ArrayList<String> data = LineArtDecoder.getAnalizedInput(); // ラベル情報を取得する
-		StringBuffer dataBuffer = new StringBuffer();
-		for (String str : data) {
-			dataBuffer.append(str);
-		}
-		
 		ArrayList<String> border = LineArtDecoder.getAnalizedBorder(); // 境界情報を取得する
-		StringBuffer borderBuffer = new StringBuffer();
-		for (String str : border) {
-			borderBuffer.append(str);
-		}
 		
-		String result = LineArtAnalyzer.analyze(dataBuffer.toString(), borderBuffer.toString());
+		// 入力が不正だった場合
+		if (data == null) {
+			setResultToTextView("不可能図形であるか入力が不正です");
+			drawBmpFromMat(res);
+			return ;
+		}
+
+		String result = LineArtAnalyzer.analyze(getStringFromStringArray(data), getStringFromStringArray(border));
 		mEdges = LineArtAnalyzer.getAnalizedEdgeSet();
 		
-		mLayout.addView(mOutputImage);
-		mTextView.setText(result);
+		if (mEdges.didSolved())
+		{
+			res = LineArtColorer.colorLineArtByEdgeInfo(res, mVectors, mEdges);	// カラーリング
+			drawBmpFromMat(res);
+			mLayout.removeView(mTextView);
+		}
+		else {
+			setResultToTextView(result.replace("\n", " "));
+			drawBmpFromMat(res);
+		}
+	}
+	
+	private void setResultToTextView(String res) {
+		mTextView.setText(res);
+		mLayout.removeView(mTextView);
 		mLayout.addView(mTextView); // TextViewも表示
+	}
+	
+	private String getStringFromStringArray(ArrayList<String> array) {
+		StringBuffer buffer = new StringBuffer();
+		for (String str : array) {
+			buffer.append(str);
+		}
+		Log.d(TAG, array.toString());
+		
+		return buffer.toString();
+	}
+	
+	private void drawBmpFromMat(Mat target) {
+		Bitmap dst = Bitmap.createBitmap(target.width(), target.height(), Bitmap.Config.ARGB_8888);
+		Utils.matToBitmap(target, dst);
+		
+		// 頂点を描画した図の設定
+		mOutputImage.setImageBitmap(dst);
+		mLayout.removeView(mOutputImage);
+		mLayout.addView(mOutputImage);
 	}
 	
 	@Override
@@ -184,4 +181,14 @@ public class PhotoAnalyzeActivity extends Activity {
 		}
 		return ret;
 	}
+	
+	@Override
+	public void onClickFileSelect(File file) {
+		if (file != null) {
+			mFilePath = file.getPath();
+			Log.d(TAG, "file" + mFilePath);
+			analyze();
+		}
+	}
+	
 }

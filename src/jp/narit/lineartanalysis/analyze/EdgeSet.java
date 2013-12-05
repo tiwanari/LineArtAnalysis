@@ -44,7 +44,6 @@ public class EdgeSet {
 		for (Edge e : mSet) {
 			if (e.getCandidatesConsideredDirection(e.getFrom()).isEmpty())
 				return "この図形は不可能図形です．";
-				
 		}
 		for (Edge e : mSet) {
 			result.append(e.showLine() + ": " + e.showCandidates());

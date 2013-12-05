@@ -67,6 +67,8 @@ public class LineArtAnalyzer {
 	 * 境界線によって，制約を強める
 	 */
 	private static void decordBorder(String borderString) {
+		if (borderString == null)	// 境界が与えられないとき
+			return ;
 		// テキストを改行で分ける
 		String[] raws = borderString.split("\n");
 		

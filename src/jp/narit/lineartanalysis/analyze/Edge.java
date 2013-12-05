@@ -147,4 +147,14 @@ public class Edge {
 	public int getCandidatesCount() {
 		return mLabelCandidates.size();
 	}
+	
+	/**
+	 * 候補が一つであればその候補を返す
+	 * @return
+	 */
+	public Label getCandidate() {
+		if (getCandidatesCount() != 1)
+			return null;
+		return mLabelCandidates.get(0);
+	}
 }

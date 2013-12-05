@@ -6,12 +6,12 @@ import android.util.Log;
 
 public class Vector2D {
 	private static final String TAG = "Vector2D";
-	Vertex2D vt0;
-	Vertex2D vt1;
+	public Vertex2D from;
+	public Vertex2D to;
 	
 	public Vector2D(Vertex2D pt0, Vertex2D pt1) {
-		this.vt0 = pt0;
-		this.vt1 = pt1;
+		this.from = pt0;
+		this.to = pt1;
 	}
 
 	/**
@@ -29,7 +29,7 @@ public class Vector2D {
 	 * @return
 	 */
 	public double norm() {
-		Point a = new Point(vt1.point.x - vt0.point.x, vt1.point.y - vt0.point.y);
+		Point a = new Point(to.point.x - from.point.x, to.point.y - from.point.y);
 		return Math.sqrt(a.x * a.x + a.y * a.y);
 	}
 
@@ -41,8 +41,8 @@ public class Vector2D {
 	 * @return
 	 */
 	public double innerProduct(Vector2D vec) {
-		Point a = new Point(this.vt1.point.x - this.vt0.point.x, this.vt1.point.y - this.vt0.point.y);
-		Point b = new Point(vec.vt1.point.x  - vec.vt0.point.x,  vec.vt1.point.y  - vec.vt0.point.y);
+		Point a = new Point(this.to.point.x - this.from.point.x, this.to.point.y - this.from.point.y);
+		Point b = new Point(vec.to.point.x  - vec.from.point.x,  vec.to.point.y  - vec.from.point.y);
 		return a.x * b.x + a.y * b.y;
 	}
 	
@@ -54,8 +54,8 @@ public class Vector2D {
 	 * @return
 	 */
 	public double crossProduct(Vector2D vec) {
-		Point a = new Point(this.vt1.point.x - this.vt0.point.x, this.vt1.point.y - this.vt0.point.y);
-		Point b = new Point(vec.vt1.point.x  - vec.vt0.point.x,  vec.vt1.point.y  - vec.vt0.point.y);
+		Point a = new Point(this.to.point.x - this.from.point.x, this.to.point.y - this.from.point.y);
+		Point b = new Point(vec.to.point.x  - vec.from.point.x,  vec.to.point.y  - vec.from.point.y);
 		Log.d(TAG, "a:(" + a.x + ", " + a.y + "), b:(" + b.x + ", " + b.y + ")");
 		return - (a.x * b.y - a.y * b.x);	// y軸が下向き
 	}
@@ -67,6 +67,7 @@ public class Vector2D {
 	 */
 	public double angleBetween(Vector2D vec) {
 		double res = this.innerProduct(vec) / (this.norm() * vec.norm());
+		Log.d(TAG, "inner:" + this.innerProduct(vec) + ", this.norm: " + this.norm() + ", vec.norm: " + vec.norm());
 		return Math.acos(res);
 	}
 }

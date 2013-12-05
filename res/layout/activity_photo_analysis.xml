@@ -10,13 +10,6 @@
         android:layout_height="wrap_content" >
 
         <Button
-            android:id="@+id/bt.takePhoto"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="写真を撮る" />
-
-        <Button
             android:id="@+id/bt.analyzePhoto"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

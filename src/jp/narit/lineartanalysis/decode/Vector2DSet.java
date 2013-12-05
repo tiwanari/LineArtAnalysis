@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 
 /**
- * 辺の集合
+ * vectorの集合
  * @author tatsuya
  *
  */
@@ -21,14 +21,14 @@ public class Vector2DSet {
 		mSet.clear();
 	}
 	
-	public Vector2D addEdge(Vector2D edge) {
-		Vertex2D from = edge.vt0;
-		Vertex2D to = edge.vt1;
+	public Vector2D addVector(Vector2D edge) {
+		Vertex2D from = edge.from;
+		Vertex2D to = edge.to;
 
 		if (from.equals(to))	return null;	// 同じなら追加しない
 		
 		Vector2D ret;
-		if ((ret = getEdge(from, to)) == null) {
+		if ((ret = getVector(from, to)) == null) {
 			mSet.add(edge);	// なければ追加
 			return edge;
 		}
@@ -37,16 +37,16 @@ public class Vector2DSet {
 	}
 
 	/**
-	 * 頂点からedgeを探して返す
+	 * 頂点からvectorを探して返す
 	 * @param v0
 	 * @param v1
 	 * @return
 	 */
-	public Vector2D getEdge(Vertex2D v0, Vertex2D v1) {
+	public Vector2D getVector(Vertex2D v0, Vertex2D v1) {
 		// Setを調べる
 		for (Vector2D e : mSet) {
-			Vertex2D from = e.vt0;
-			Vertex2D to = e.vt1;
+			Vertex2D from = e.from;
+			Vertex2D to = e.to;
 			
 			if (v0.equals(from) && v1.equals(to))
 				return e;	// 同じものがあればそれを返す
@@ -60,11 +60,11 @@ public class Vector2DSet {
 	 * @param v
 	 * @return
 	 */
-	public ArrayList<Vector2D> getEdges(Vertex2D v) {
+	public ArrayList<Vector2D> getVectors(Vertex2D v) {
 		ArrayList<Vector2D> list = new ArrayList<Vector2D>();
 		// Setを調べる
 		for (Vector2D e : mSet) {
-			Vertex2D from = e.vt0;
+			Vertex2D from = e.from;
 			
 			// どちらかにあるか
 			if (v.equals(from))
@@ -74,7 +74,7 @@ public class Vector2DSet {
 		return list;
 	}
 	
-	public ArrayList<Vector2D> getEdgeList() {
+	public ArrayList<Vector2D> getVectorList() {
 		return mSet;
 	}
 }

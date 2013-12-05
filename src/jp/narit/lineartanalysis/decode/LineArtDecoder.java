@@ -23,7 +23,8 @@ public class LineArtDecoder {
 	private static ArrayList<Vertex2D> vertexList = new ArrayList<Vertex2D>();
 	private static Vector2DSet vectorSet = new Vector2DSet();
 	
-	private static final double EPSILON = 0.5;
+	private static final double EPSILON_THETA = 0.001;
+	private static final int EPSILON_POSITION = 5;
 	
 	private static Mat gray = new Mat();
 	private static Mat bin = new Mat();
@@ -32,6 +33,7 @@ public class LineArtDecoder {
 	
 	private static ArrayList<String> mInput = new ArrayList<String>();
 	private static ArrayList<String> mBorder = new ArrayList<String>();
+	
 	
 	private static void init() {
 		vertexList.clear();
@@ -79,11 +81,24 @@ public class LineArtDecoder {
 		MatOfPoint corners = new MatOfPoint();
 		Imgproc.goodFeaturesToTrack(gray, corners, 80, 0.01, 5);
 		
-		// 外側に出てくる無駄な点を削除(原因不明)
+		
 		ArrayList<Point> points = new ArrayList<Point>(corners.toList());
 		ArrayList<Point> temp = new ArrayList<Point>(corners.toList());
-		for (Point point : temp) {
-			if (point.x > mBmp.getWidth() - 5) points.remove(point);
+		for (int i = 0; i < temp.size(); i++) {
+			Point p0 = temp.get(i);
+			// 外側に出てくる無駄な点を削除(原因不明)
+			if (p0.x > mBmp.getWidth() - EPSILON_POSITION || p0.x < EPSILON_POSITION ) points.remove(p0);
+			// 近すぎる頂点は除く
+			else {
+				for (int j = i + 1; j < temp.size(); j++) {
+					Point p1 = temp.get(j);
+					if (Math.abs(p1.x - p0.x) < 2 * EPSILON_POSITION
+							&& Math.abs(p1.y - p0.y) < 2 * EPSILON_POSITION) {
+						points.remove(p1);
+						break;
+					}
+				}
+			}
 		}
 		
 		// BGRA画像へ戻す
@@ -93,7 +108,7 @@ public class LineArtDecoder {
 		for (int i = 0; i < points.size(); i++) {
 			String name = "" + (char) ('A' + i);
 			Point point = points.get(i);
-			Log.d(TAG, "point: (" + point.x + ", " + point.y + ")");
+			Log.d(TAG, "point[" + name + ": (" + point.x + ", " + point.y + ")");
 			vertexList.add(new Vertex2D(name, point)); // 頂点と頂点名の対応を保存
 			Core.putText(gray, name, point, Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(255, 0, 0, 0)); // 点の対応を表示
 		}
@@ -112,26 +127,26 @@ public class LineArtDecoder {
 			for (Point pt : m.toList()) {
 				for (Vertex2D vt : vertexList) {
 					// 頂点(付近)を通ったら
-					if (Math.abs(pt.x - vt.point.x) < 3 && Math.abs(pt.y - vt.point.y) < 3) {
+					if (Math.abs(pt.x - vt.point.x) <= EPSILON_POSITION && Math.abs(pt.y - vt.point.y) <= EPSILON_POSITION) {
 						Vertex2D temp1 = vt; // 2つ目の頂点
 						
 						if (temp0 == null) first = temp1; // 最初の頂点を保存
 						else {
 							// v0->v1やv1->v2を想定
-							vectorSet.addEdge(new Vector2D(temp0, temp1));
-							vectorSet.addEdge(new Vector2D(temp1, temp0)); // 入れ替えたものも登録しておく
+							vectorSet.addVector(new Vector2D(temp0, temp1));
+							vectorSet.addVector(new Vector2D(temp1, temp0)); // 入れ替えたものも登録しておく
 						}
 						temp0 = temp1; // 更新しておく
 					}
 				}
 			}
 			// v2->v0を想定
-			if (temp0 != null) vectorSet.addEdge(new Vector2D(temp0, first));
+			if (temp0 != null) vectorSet.addVector(new Vector2D(temp0, first));
 		}
 		
 		// 辺の確認
-		for (Vector2D edge : vectorSet.getEdgeList()) {
-			Log.d(TAG, "v0:" + edge.vt0.name + ", v1:" + edge.vt1.name);
+		for (Vector2D edge : vectorSet.getVectorList()) {
+			Log.d(TAG, "v0:" + edge.from.name + ", v1:" + edge.to.name);
 		}
 		
 		// 一番外側の境界をたどって境界の点を探す
@@ -147,7 +162,7 @@ public class LineArtDecoder {
 		ArrayList<String> border = new ArrayList<String>();
 		for (Vertex2D vt0 : borderPoints) {
 			for (Vertex2D vt1 : borderPoints) {
-				if (vectorSet.getEdge(vt0, vt1) != null) {
+				if (vectorSet.getVector(vt0, vt1) != null) {
 					StringBuffer buffer = new StringBuffer();
 					buffer.append(vt0.name + " " + vt1.name + "\n");
 					border.add(buffer.toString());
@@ -169,7 +184,7 @@ public class LineArtDecoder {
 			int label = -1;
 			
 			// 始点から辺のリストを抽出
-			ArrayList<Vector2D> members = vectorSet.getEdges(from);
+			ArrayList<Vector2D> members = vectorSet.getVectors(from);
 			Log.d(TAG, "checking... " + from.name);
 			ArrayList<Vector2D> sorted = sortEdges(members, members.size() == 2); // ラベル格納に見合うように並び替える
 			// L型
@@ -179,20 +194,24 @@ public class LineArtDecoder {
 			// A,Y,T型の振り分け
 			else if (sorted.size() == 3){
 				double angle = calcMaximumAngle(sorted);
-				if (angle >= Math.PI - EPSILON && angle <= Math.PI + EPSILON)
+				Log.d(TAG, "angle :" + angle);
+				if (angle >= Math.PI - EPSILON_THETA && angle <= Math.PI + EPSILON_THETA)
 					label = LabelDictionary.T;
-				else if (angle > Math.PI)
+				else if (angle >= Math.PI)
 					label = LabelDictionary.A;
 				else
 					label = LabelDictionary.Y;
+				
+				Log.d(TAG, "Label: " + LabelDictionary.getLabelString(label));
 			}
 			else {
-				continue;
+				// 不可能図形か入力が間違っている時
+				return null;	// TODO: 正しく読み取れない時
 			}
 			StringBuffer buffer = new StringBuffer();
 			buffer.append(LabelDictionary.getLabelString(label) + " " + from.name); // 始点
 			for (Vector2D vec : sorted) {
-				buffer.append(" " + vec.vt1.name); // 終端点列
+				buffer.append(" " + vec.to.name); // 終端点列
 			}
 			buffer.append("\n"); // 改行
 			datas.add(buffer.toString());
@@ -209,20 +228,29 @@ public class LineArtDecoder {
 	 */
 	private static ArrayList<Vector2D> sortEdges(ArrayList<Vector2D> members, boolean isLType) {
 		ArrayList<Vector2D> temp = new ArrayList<Vector2D>(members);
-		
-		// 順番に並び替える(バブルソート)
-		for (int i = 0; i < temp.size() - 1; i++) {
-			Vector2D vec0 = temp.get(i);
-			Vector2D vec1 = temp.get(i + 1);
-			
-			// 位置関係を見て並び替える
-			if (isLType) {
-				if (vec0.isClockwizedAround(vec1)) swap(temp, i, i + 1);
+		boolean isUpdated;
+		do {
+			isUpdated = false;
+			// 順番に並び替える(バブルソート)
+			for (int i = 0; i < temp.size() - 1; i++) {
+				Vector2D vec0 = temp.get(i);
+				Vector2D vec1 = temp.get(i + 1);
+				
+				// 位置関係を見て並び替える(L,Yは逆向き)
+				if (isLType) {
+					if (vec0.isClockwizedAround(vec1)) {
+						swap(temp, i, i + 1);
+						isUpdated = true;
+					}
+				}
+				else {
+					if (!(vec0.isClockwizedAround(vec1))) {
+						swap(temp, i, i + 1);
+						isUpdated = true;
+					}
+				}
 			}
-			else {
-				if (!(vec0.isClockwizedAround(vec1))) swap(temp, i, i + 1);
-			}
-		}
+		} while(isUpdated);
 		
 		return temp;
 	}
@@ -252,6 +280,9 @@ public class LineArtDecoder {
 		// 3つの辺の間の角を考える
 		// 並び替えられているので1,2番目の辺と2,3番目の辺の間の角を足して360度から引けば良い
 		double sumOfAngles = vec0.angleBetween(vec1) + vec1.angleBetween(vec2);
+		Log.d(TAG, "angle0 : " + vec0.angleBetween(vec1));
+		Log.d(TAG, "angle1 : " + vec1.angleBetween(vec2));
+		
 		return 2 * Math.PI - sumOfAngles;
 	}
 }

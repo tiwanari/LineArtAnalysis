@@ -16,7 +16,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 
-public class MainActivity extends Activity {
+public class TextAnalyzeActivity extends Activity {
 	
 	private static final String TAG = "MainActivity";
 	private EditText mInputText;
@@ -97,7 +97,7 @@ public class MainActivity extends Activity {
 				break;
 			case R.id.it_photoAnalysis:
 				// 画像解析へ
-				Intent intent = new Intent(MainActivity.this, PhotoAnalyzeActivity.class);
+				Intent intent = new Intent(TextAnalyzeActivity.this, PhotoAnalyzeActivity.class);
 				startActivity(intent);
 				break;
 		}
