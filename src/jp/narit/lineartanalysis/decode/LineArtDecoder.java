@@ -11,7 +11,6 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import android.graphics.Bitmap;
@@ -27,52 +26,50 @@ public class LineArtDecoder {
 	private static final double EPSILON_THETA = 0.001;
 	private static final int EPSILON_POSITION = 5;
 	
-	private static Mat gray = new Mat();
-	private static Mat bin = new Mat();
+	private static Mat mTarget = new Mat();
+	private static Mat mGray = new Mat();
+	private static Mat mBin = new Mat();
 	
 	private static Bitmap mBmp;
 	
 	private static ArrayList<String> mInput = new ArrayList<String>();
 	private static ArrayList<String> mBorder = new ArrayList<String>();
 	
+	private static boolean isEnabledPreprocessing;
+	
 	private static void init() {
 		vertexList.clear();
 		vectorSet.init();
 	}
 	
-	public static Mat decodeLineArt(String filename) {
+	public static Mat decodeLineArt(String filename, boolean photo) {
 		init();
 		
+		// 細線化の有無
+		isEnabledPreprocessing = photo;
+		
 		// String filename = "boxes.png";
-		mBmp = BitmapFactory.decodeFile(filename)
-				.copy(Bitmap.Config.ARGB_8888, true);
+		mBmp = BitmapFactory.decodeFile(filename).copy(Bitmap.Config.ARGB_8888, true);
+		Utils.bitmapToMat(mBmp, mTarget);
 		
-		Mat mat = new Mat();
-		Utils.bitmapToMat(mBmp, mat);
-		
-		// pre process
-		
-		// グレー画像へ
-		Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
-		// 2値化
-		Imgproc.adaptiveThreshold(gray, bin, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY_INV, 15, 4);
+		// 下処理
+		preprocessImage(mTarget);
 		
 		mBorder = decordVerticesAndEdges(); // 点と辺の抽出し，境界の辺を文字列のリストとして返す
 		mInput = decordVerticesType(); // 頂点のラベルを振り文字列リストとして返す
 		
-		return gray;
+		return mTarget;
 	}
 	
-	public static ArrayList<String> getAnalizedInput() {
-		return mInput;
-	}
 	
-	public static ArrayList<String> getAnalizedBorder() {
-		return mBorder;
-	}
-	
-	public static Vector2DSet getAnalizedVectorSet() {
-		return vectorSet;
+	private static void preprocessImage(Mat mat) {
+		// 細線化
+		if (isEnabledPreprocessing) 
+			mGray = LineArtPreprocessor.preprocessing(mat);
+		else
+			Imgproc.cvtColor(mat, mGray, Imgproc.COLOR_RGB2GRAY);
+		
+		Imgproc.adaptiveThreshold(mGray, mBin, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 15, 4);
 	}
 	
 	/**
@@ -82,8 +79,13 @@ public class LineArtDecoder {
 		
 		// 頂点の抽出
 		MatOfPoint corners = new MatOfPoint();
-		Imgproc.goodFeaturesToTrack(gray, corners, 80, 0.01, 5);
 		
+		// 細線化の有無で場合分け
+		if (isEnabledPreprocessing)
+			Imgproc.goodFeaturesToTrack(mGray, corners, 80, 0.1, 3);
+		else
+			Imgproc.goodFeaturesToTrack(mGray, corners, 80, 0.05, 3);
+			
 		ArrayList<Point> points = new ArrayList<Point>(corners.toList());
 		ArrayList<Point> temp = new ArrayList<Point>(corners.toList());
 		for (int i = 0; i < temp.size(); i++) {
@@ -103,21 +105,18 @@ public class LineArtDecoder {
 			}
 		}
 		
-		// BGRA画像へ戻す
-		Imgproc.cvtColor(gray, gray, Imgproc.COLOR_GRAY2BGRA, 4);
-		
 		// 頂点の登録
 		for (int i = 0; i < points.size(); i++) {
 			String name = "" + (char) ('A' + i);
 			Point point = points.get(i);
-			Log.d(TAG, "point[" + name + ": (" + point.x + ", " + point.y + ")");
+			Log.d(TAG, "point[" + name + "]: (" + point.x + ", " + point.y + ")");
 			vertexList.add(new Vertex2D(name, point)); // 頂点と頂点名の対応を保存
-			Core.putText(gray, name, point, Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(255, 0, 0, 0)); // 点の対応を表示
+			Core.putText(mTarget, name, point, Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(255, 0, 0, 0)); // 点の対応を表示
 		}
 		
 		// 輪郭の抽出
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-		Imgproc.findContours(bin, contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_TC89_L1);
+		Imgproc.findContours(mBin, contours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_NONE);
 		
 		// 境界をなぞってv0->v1->v2->v0のように頂点を見つけ，隣り合う点を結んで辺を作る
 		for (int i = 0; i < contours.size(); i++) {
@@ -206,7 +205,8 @@ public class LineArtDecoder {
 			}
 			else {
 				// 不可能図形か入力が間違っている時
-				return null; // TODO: 正しく読み取れない時
+				Log.d(TAG, "不可能図形or入力が間違っている(辺:" + sorted.size() + ")");
+				return null;
 			}
 			StringBuffer buffer = new StringBuffer();
 			buffer.append(LabelDictionary.getLabelString(label) + " " + from.name); // 始点
@@ -286,5 +286,35 @@ public class LineArtDecoder {
 		Log.d(TAG, "angle1 : " + vec1.angleBetween(vec2));
 		
 		return 2 * Math.PI - sumOfAngles;
+	}
+	
+	/**
+	 * 解析された入力データを取得
+	 * decodeLineArtの後に呼ぶ
+	 * 
+	 * @return
+	 */
+	public static ArrayList<String> getAnalizedInput() {
+		return mInput;
+	}
+	
+	/**
+	 * 解析された境界データを取得
+	 * decodeLineArtの後に呼ぶ
+	 * 
+	 * @return
+	 */
+	public static ArrayList<String> getAnalizedBorder() {
+		return mBorder;
+	}
+	
+	/**
+	 * 解析されたベクトル情報を取得
+	 * decodeLineArtの後に呼ぶ
+	 * 
+	 * @return
+	 */
+	public static Vector2DSet getAnalizedVectorSet() {
+		return vectorSet;
 	}
 }

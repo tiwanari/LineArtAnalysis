@@ -17,6 +17,7 @@ import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Environment;
@@ -26,6 +27,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -43,6 +45,8 @@ public class PhotoAnalyzeActivity extends Activity implements OnFileSelectDialog
 	private ImageView mOutputImage;
 	private TextView mTextView;
 	
+	private CheckBox mIsPhotoImage;
+	
 	private EdgeSet mEdges;
 	private Vector2DSet mVectors;
 	
@@ -51,7 +55,7 @@ public class PhotoAnalyzeActivity extends Activity implements OnFileSelectDialog
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_photo_analysis);
+		setContentView(R.layout.activity_photo_analyze);
 		findViews();
 	}
 	
@@ -65,6 +69,7 @@ public class PhotoAnalyzeActivity extends Activity implements OnFileSelectDialog
 				selectFile();
 			}
 		});
+		mIsPhotoImage = (CheckBox) findViewById(R.id.cb_isThinning);
 		mOutputImage = new ImageView(this);
 		mTextView = new TextView(this);
 	}
@@ -97,10 +102,8 @@ public class PhotoAnalyzeActivity extends Activity implements OnFileSelectDialog
 	}
 	
 	private void analyze() {
-		
-		Mat res = LineArtDecoder.decodeLineArt(mFilePath);
+		Mat res = LineArtDecoder.decodeLineArt(mFilePath, mIsPhotoImage.isChecked());
 		mVectors = LineArtDecoder.getAnalizedVectorSet();
-		
 		
 		ArrayList<String> data = LineArtDecoder.getAnalizedInput(); // ラベル情報を取得する
 		ArrayList<String> border = LineArtDecoder.getAnalizedBorder(); // 境界情報を取得する
@@ -115,9 +118,9 @@ public class PhotoAnalyzeActivity extends Activity implements OnFileSelectDialog
 		String result = LineArtAnalyzer.analyze(getStringFromStringArray(data), getStringFromStringArray(border));
 		mEdges = LineArtAnalyzer.getAnalizedEdgeSet();
 		
-		if (mEdges.didSolved())
-		{
-			res = LineArtColorer.colorLineArtByEdgeInfo(res, mVectors, mEdges);	// カラーリング
+		// 一意にきまっているならラベルを貼る
+		if (mEdges.didSolved()) {
+			res = LineArtColorer.colorLineArtByEdgeInfo(res, mVectors, mEdges); // カラーリング
 			drawBmpFromMat(res);
 			mLayout.removeView(mTextView);
 		}
@@ -170,13 +173,14 @@ public class PhotoAnalyzeActivity extends Activity implements OnFileSelectDialog
 	public boolean onOptionsItemSelected(MenuItem item) {
 		boolean ret = true;
 		switch (item.getItemId()) {
-			default:
-				ret = super.onOptionsItemSelected(item);
-				break;
 			case R.id.it_textAnalysis:
-				finish(); // 終了
+				Intent intent = new Intent(PhotoAnalyzeActivity.this, TextAnalyzeActivity.class);
+				startActivity(intent);
 				break;
 			case R.id.it_photoAnalysis:
+				break;
+			default:
+				ret = super.onOptionsItemSelected(item);
 				break;
 		}
 		return ret;
