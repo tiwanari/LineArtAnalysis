@@ -11,6 +11,7 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import android.graphics.Bitmap;
@@ -34,7 +35,6 @@ public class LineArtDecoder {
 	private static ArrayList<String> mInput = new ArrayList<String>();
 	private static ArrayList<String> mBorder = new ArrayList<String>();
 	
-	
 	private static void init() {
 		vertexList.clear();
 		vectorSet.init();
@@ -49,6 +49,9 @@ public class LineArtDecoder {
 		
 		Mat mat = new Mat();
 		Utils.bitmapToMat(mBmp, mat);
+		
+		// pre process
+		
 		// グレー画像へ
 		Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
 		// 2値化
@@ -81,13 +84,12 @@ public class LineArtDecoder {
 		MatOfPoint corners = new MatOfPoint();
 		Imgproc.goodFeaturesToTrack(gray, corners, 80, 0.01, 5);
 		
-		
 		ArrayList<Point> points = new ArrayList<Point>(corners.toList());
 		ArrayList<Point> temp = new ArrayList<Point>(corners.toList());
 		for (int i = 0; i < temp.size(); i++) {
 			Point p0 = temp.get(i);
 			// 外側に出てくる無駄な点を削除(原因不明)
-			if (p0.x > mBmp.getWidth() - EPSILON_POSITION || p0.x < EPSILON_POSITION ) points.remove(p0);
+			if (p0.x > mBmp.getWidth() - EPSILON_POSITION || p0.x < EPSILON_POSITION) points.remove(p0);
 			// 近すぎる頂点は除く
 			else {
 				for (int j = i + 1; j < temp.size(); j++) {
@@ -115,7 +117,7 @@ public class LineArtDecoder {
 		
 		// 輪郭の抽出
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-		Imgproc.findContours(bin, contours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_NONE);
+		Imgproc.findContours(bin, contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_TC89_L1);
 		
 		// 境界をなぞってv0->v1->v2->v0のように頂点を見つけ，隣り合う点を結んで辺を作る
 		for (int i = 0; i < contours.size(); i++) {
@@ -148,6 +150,7 @@ public class LineArtDecoder {
 		for (Vector2D edge : vectorSet.getVectorList()) {
 			Log.d(TAG, "v0:" + edge.from.name + ", v1:" + edge.to.name);
 		}
+		
 		
 		// 一番外側の境界をたどって境界の点を探す
 		ArrayList<Vertex2D> borderPoints = new ArrayList<Vertex2D>();
@@ -192,21 +195,18 @@ public class LineArtDecoder {
 				label = LabelDictionary.L;
 			}
 			// A,Y,T型の振り分け
-			else if (sorted.size() == 3){
+			else if (sorted.size() == 3) {
 				double angle = calcMaximumAngle(sorted);
 				Log.d(TAG, "angle :" + angle);
-				if (angle >= Math.PI - EPSILON_THETA && angle <= Math.PI + EPSILON_THETA)
-					label = LabelDictionary.T;
-				else if (angle >= Math.PI)
-					label = LabelDictionary.A;
-				else
-					label = LabelDictionary.Y;
+				if (angle >= Math.PI - EPSILON_THETA && angle <= Math.PI + EPSILON_THETA) label = LabelDictionary.T;
+				else if (angle >= Math.PI) label = LabelDictionary.A;
+				else label = LabelDictionary.Y;
 				
 				Log.d(TAG, "Label: " + LabelDictionary.getLabelString(label));
 			}
 			else {
 				// 不可能図形か入力が間違っている時
-				return null;	// TODO: 正しく読み取れない時
+				return null; // TODO: 正しく読み取れない時
 			}
 			StringBuffer buffer = new StringBuffer();
 			buffer.append(LabelDictionary.getLabelString(label) + " " + from.name); // 始点
@@ -222,6 +222,7 @@ public class LineArtDecoder {
 	
 	/**
 	 * 辺を入れ替える
+	 * 
 	 * @param members
 	 * @param isLType
 	 * @return
@@ -250,13 +251,14 @@ public class LineArtDecoder {
 					}
 				}
 			}
-		} while(isUpdated);
+		} while (isUpdated);
 		
 		return temp;
 	}
 	
 	/**
 	 * 配列の要素の入れ替え
+	 * 
 	 * @param list
 	 * @param index1
 	 * @param index2
