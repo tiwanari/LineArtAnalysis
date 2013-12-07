@@ -3,6 +3,7 @@ package jp.narit.lineartanalysis.decode;
 import java.util.ArrayList;
 import java.util.List;
 import jp.narit.lineartanalysis.analyze.LabelDictionary;
+import jp.narit.lineartanalysis.preprocess.LineArtPreprocessor;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;

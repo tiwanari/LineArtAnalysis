@@ -1,4 +1,4 @@
-package jp.narit.lineartanalysis.decode;
+package jp.narit.lineartanalysis.preprocess;
 
 import java.util.ArrayList;
 import java.util.List;
