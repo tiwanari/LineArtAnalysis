@@ -6,7 +6,6 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -89,16 +88,15 @@ public class TextAnalyzeActivity extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		boolean ret = true;
 		switch (item.getItemId()) {
-			default:
-				ret = super.onOptionsItemSelected(item);
-				break;
 			case R.id.it_textAnalysis:
 				// 何もしない
 				break;
 			case R.id.it_photoAnalysis:
 				// 画像解析へ
-				Intent intent = new Intent(TextAnalyzeActivity.this, PhotoAnalyzeActivity.class);
-				startActivity(intent);
+				finish();
+				break;
+			default:
+				ret = super.onOptionsItemSelected(item);
 				break;
 		}
 		return ret;

@@ -43,10 +43,9 @@ public class LineArtAnalyzer {
 			Vertex newVertex;
 			int numOfEdge;
 			
-			// Lのときは他の頂点が2つ
-			if (datas[i][0].equals("L")) numOfEdge = 2;
-			// それ以外は3つ
-			else numOfEdge = 3;
+			if (datas[i].length == 4) numOfEdge = 2;		// Lのときは他の頂点が2つ
+			else if (datas[i].length == 5) numOfEdge = 3;	// それ以外は3つ
+			else continue;	// 入力がない
 			
 			// 新しい頂点を作る
 			newVertex = new Vertex(datas[i][1], LabelDictionary.getLabelValue(datas[i][0]));
@@ -67,8 +66,9 @@ public class LineArtAnalyzer {
 	 * 境界線によって，制約を強める
 	 */
 	private static void decordBorder(String borderString) {
-		if (borderString == null)	// 境界が与えられないとき
+		if (borderString.equals(""))	// 境界が与えられないとき
 			return ;
+		
 		// テキストを改行で分ける
 		String[] raws = borderString.split("\n");
 		
