@@ -48,7 +48,6 @@ public class LineArtDecoder {
 		// 細線化の有無
 		isEnabledPreprocessing = photo;
 		
-		// String filename = "boxes.png";
 		mBmp = BitmapFactory.decodeFile(filename).copy(Bitmap.Config.ARGB_8888, true);
 		Utils.bitmapToMat(mBmp, mTarget);
 		
@@ -82,9 +81,10 @@ public class LineArtDecoder {
 		
 		// 細線化の有無で場合分け
 		if (isEnabledPreprocessing)
-			Imgproc.goodFeaturesToTrack(mGray, corners, 80, 0.1, 3);
+			Imgproc.goodFeaturesToTrack(mGray, corners, 80, 0.01, 3, new Mat(), 8, true, 0.05);	// Harris検出器を使う
+//			Imgproc.goodFeaturesToTrack(mGray, corners, 80, 0.1, 3);
 		else
-			Imgproc.goodFeaturesToTrack(mGray, corners, 80, 0.05, 3);
+			Imgproc.goodFeaturesToTrack(mGray, corners, 80, 0.04, 3);
 			
 		ArrayList<Point> points = new ArrayList<Point>(corners.toList());
 		ArrayList<Point> temp = new ArrayList<Point>(corners.toList());
@@ -111,7 +111,7 @@ public class LineArtDecoder {
 			Point point = points.get(i);
 			Log.d(TAG, "point[" + name + "]: (" + point.x + ", " + point.y + ")");
 			vertexList.add(new Vertex2D(name, point)); // 頂点と頂点名の対応を保存
-			Core.putText(mTarget, name, point, Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(255, 0, 0, 0)); // 点の対応を表示
+			Core.putText(mTarget, name, point, Core.FONT_HERSHEY_TRIPLEX, 2, new Scalar(255, 0, 0, 0)); // 点の対応を表示
 		}
 		
 		// 輪郭の抽出
@@ -155,7 +155,7 @@ public class LineArtDecoder {
 		ArrayList<Vertex2D> borderPoints = new ArrayList<Vertex2D>();
 		for (Vertex2D vt : vertexList) {
 			if (Imgproc.pointPolygonTest(new
-					MatOfPoint2f(contours.get(0).toArray()), vt.point, true) < 3.0) {
+					MatOfPoint2f(contours.get(0).toArray()), vt.point, true) < EPSILON_POSITION) {
 				borderPoints.add(vt);
 			}
 		}

@@ -109,7 +109,7 @@ public class LineArtPreprocessor {
 	 * @return
 	 */
 	public static Mat preprocessing(Mat target) {
-		Mat res = thining(target);
+		Mat res = thinning(target);
 		return smoothing(res);
 	}
 	
@@ -119,7 +119,7 @@ public class LineArtPreprocessor {
 	 * @param target
 	 * @return
 	 */
-	public static Mat thining(Mat target) {
+	public static Mat thinning(Mat target) {
 		Mat gray = new Mat(target.size(), CvType.CV_32F);
 		Mat res = new Mat(target.size(), CvType.CV_32F);	// 結果
 		Mat bin = new Mat(target.size(), CvType.CV_32F);	// 作業用
@@ -140,8 +140,8 @@ public class LineArtPreprocessor {
 			sum = 0.0;
 			assert(mBlackKernels.size() == mWhiteKernels.size());
 			for (int i = 0; i < mBlackKernels.size(); i++) {
-				Imgproc.filter2D(bin, bin, bin.depth(), mWhiteKernels.get(i));
-				Imgproc.filter2D(binInv, binInv, binInv.depth(), mBlackKernels.get(i));
+				Imgproc.filter2D(bin, bin, 0, mWhiteKernels.get(i));
+				Imgproc.filter2D(binInv, binInv, 0, mBlackKernels.get(i));
 				// 各カーネルで注目するのは3画素ずつなので，マッチした注目画素の濃度は3となる
 				Imgproc.threshold(bin, bin, 2.99, 1, Imgproc.THRESH_BINARY);
 				Imgproc.threshold(binInv, binInv, 2.99, 1, Imgproc.THRESH_BINARY);
@@ -173,24 +173,26 @@ public class LineArtPreprocessor {
 	 */
 	public static Mat smoothing(Mat mat) {
 		Mat res = new Mat(mat.size(), mat.type());
-		
+
 		// 輪郭の抽出
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-		Imgproc.findContours(mat, contours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+		// 折れ線近似
+		Imgproc.findContours(mat, contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 		
 		// RGB画像へ
 		Imgproc.cvtColor(res, res, Imgproc.COLOR_GRAY2BGRA);
-
+		
 		// 境界をなぞっていく
 		for (int i = 0; i < contours.size(); i++) {
 			MatOfPoint m = contours.get(i);
 			
-			for (int j = 0; j < m.rows() - 1; j++) {
+			for (int j = 0; j < m.rows() - 2; j++) {
 				Point p0 = new Point(m.get(j, 0)[0], m.get(j, 0)[1]);
 				Point p1 = new Point(m.get(j+1, 0)[0], m.get(j+1, 0)[1]);
 				Core.line(res, p0, p1, new Scalar(255, 255, 255, 0), 1);
 			}
 		}
+		
 		// ガウシアンフィルタを掛ける
 		Imgproc.GaussianBlur(res, res, new Size(3, 3), 0);
 		

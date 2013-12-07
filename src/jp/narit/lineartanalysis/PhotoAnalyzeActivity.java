@@ -1,6 +1,9 @@
 package jp.narit.lineartanalysis;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jp.narit.lineartanalysis.FileSelectDialog.OnFileSelectDialogListener;
@@ -18,9 +21,13 @@ import org.opencv.core.Mat;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,6 +38,7 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 /**
  * 画像を解析するアクティビティ
  * @author tatsuya
@@ -39,7 +47,11 @@ import android.widget.TextView;
 public class PhotoAnalyzeActivity extends Activity implements OnFileSelectDialogListener {
 	
 	private static final String TAG = "PhotoAnalyzeActivity";
-	
+
+	public static final int PREFERENCE_INIT = 0;
+	public static final int PREFERENCE_BOOTED = 1;
+	String state = Environment.getExternalStorageState();
+
 	private LinearLayout mLayout;
 	private Button mAnalyze;
 	private ImageView mOutputImage;
@@ -160,6 +172,40 @@ public class PhotoAnalyzeActivity extends Activity implements OnFileSelectDialog
 	public void onResume() {
 		super.onResume();
 		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
+		
+		// 初回時のみサンプルファイルを保存
+		if (PREFERENCE_INIT == getState()) {
+			setState(PREFERENCE_BOOTED);
+			saveSamples();
+		}
+	}
+	
+	private void saveSamples() {
+		// 読み書き可能
+		if (Environment.MEDIA_MOUNTED.equals(state)) {
+			String folderPath = getExternalFilesDir(null).toString();
+			for (int i = 0; i < 7; i++) {
+				int bmpId = getResources().getIdentifier("sample" + i, "drawable", getPackageName());
+				Bitmap bmp = BitmapFactory.decodeResource(getResources(), bmpId);
+				try {
+					FileOutputStream fos = new FileOutputStream(new File(folderPath, "sample" + i + ".png"));
+					bmp.compress(CompressFormat.PNG, 100, fos);
+					fos.close();
+				}
+				catch (FileNotFoundException e) {
+					Log.e(TAG, "sample" + i + "が存在しない");
+					e.printStackTrace();
+				}
+				catch (IOException e) {
+					Log.e(TAG, "ファイルが閉じられない");
+					e.printStackTrace();
+				}
+			}
+		}
+		else {
+			// 書き込めない
+			Toast.makeText(this, "sampleが保存できませんでした", Toast.LENGTH_SHORT).show();
+		}
 	}
 	
 	@Override
@@ -195,4 +241,19 @@ public class PhotoAnalyzeActivity extends Activity implements OnFileSelectDialog
 		}
 	}
 	
+	// データ保存
+	private void setState(int state) {
+		// SharedPreferences設定を保存
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+		sp.edit().putInt("InitState", state).commit();
+	}
+	
+	// データ読み出し
+	private int getState() {
+		// 読み込み
+		int state;
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+		state = sp.getInt("InitState", PREFERENCE_INIT);
+		return state;
+	}
 }

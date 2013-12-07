@@ -15,7 +15,7 @@ import android.util.Log;
 public class LineArtColorer {
 	
 	private static final String TAG = "LineArtColorer";
-	private static final double LENGTH = 10.0;
+	private static final double LENGTH = 30.0;
 
 	public static Mat colorLineArtByEdgeInfo(Mat target, Vector2DSet vectors, EdgeSet edges) {
 		
@@ -32,7 +32,7 @@ public class LineArtColorer {
 					break;
 				}
 				case MINUS: {
-					Core.putText(target, "-", mid, Core.FONT_HERSHEY_COMPLEX, 1, new Scalar(0, 0, 255, 0));
+					Core.putText(target, "-", mid, Core.FONT_HERSHEY_TRIPLEX, 2, new Scalar(0, 0, 255, 0));
 					break;
 				}
 				case OUTWARD: {
@@ -41,7 +41,7 @@ public class LineArtColorer {
 					break;
 				}
 				case PLUS: {
-					Core.putText(target, "+", mid, Core.FONT_HERSHEY_COMPLEX, 1, new Scalar(0, 0, 255, 0));
+					Core.putText(target, "+", mid, Core.FONT_HERSHEY_TRIPLEX, 2, new Scalar(0, 0, 255, 0));
 					break;
 				}
 				default: {
